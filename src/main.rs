@@ -47,24 +47,40 @@ enum Command {
 #[derive(Debug)]
 struct Tasks(Vec<Todo>);
 
+// NOTE: common debugs
+#[derive(Parser, Clone, Debug)]
+struct Todo {
+    task: String,
+    id: usize,
+}
+
 // NOTE: use of trait, fromstr for parsing
 impl FromStr for Tasks {
     type Err = &'static str;
 
+    // TODO: change to partition
+    // https://doc.rust-lang.org/rust-by-example/error/iter_result.html
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // NOTE: iterators
         if s.trim().is_empty() {
             return Ok(Tasks(vec![]));
         }
-        let x: Result<Vec<Todo>, &str> =
-            s.split('\n').into_iter().map(str::parse::<Todo>).collect();
-        match x {
-            Ok(v) => Ok(Tasks(v)),
-            // Ignore errors, could just be there were no tasks
-            Err(e) => {
-                println!("{e}");
-                Ok(Tasks(vec![]))
+        let (tasks, errors): (Vec<_>, Vec<_>) = s
+            .split('\n')
+            .into_iter()
+            .map(str::parse::<Todo>)
+            .partition(Result::is_ok);
+
+        if !errors.is_empty() {
+            for err in errors {
+                println!("{}", err.unwrap_err());
             }
+        }
+
+        if tasks.is_empty() {
+            Ok(Tasks(vec![]))
+        } else {
+            Ok(Tasks(tasks.into_iter().map(Result::unwrap).collect()))
         }
     }
 }
@@ -76,13 +92,6 @@ impl Display for Tasks {
         }
         Ok(())
     }
-}
-
-// NOTE: common debugs
-#[derive(Parser, Clone, Debug)]
-struct Todo {
-    task: String,
-    id: usize,
 }
 
 impl FromStr for Todo {
