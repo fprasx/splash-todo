@@ -1,5 +1,5 @@
 [package]
-name = "neon-interview"
+name = "splash-todo"
 version = "0.1.0"
 edition = "2021"
 
